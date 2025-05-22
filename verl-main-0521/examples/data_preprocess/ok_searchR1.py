@@ -2,15 +2,10 @@ import argparse
 import os
 import pandas as pd
 from huggingface_hub import hf_hub_download
-from huggingface_hub.utils import EntryNotFoundError # 用于捕获文件未找到的错误
+from huggingface_hub.utils import EntryNotFoundError
 import tempfile
 from functools import partial
-
-# 假设 hdfs_io_1.py 与此脚本在同一 Python 包路径下，或者 PYTHONPATH 配置正确
-# 根据你提供的代码，我们保留原样
-# 如果 hdfs_io_1.py 在同目录下且不是包的一部分，你可能需要调整导入方式
-# 例如 from hdfs_io_1 import copy, makedirs
-from .hdfs_io_1 import copy, makedirs
+from verl.utils.hdfs_io import copy, makedirs
 
 
 # 系统与用户前缀内容 (与你提供的脚本一致)

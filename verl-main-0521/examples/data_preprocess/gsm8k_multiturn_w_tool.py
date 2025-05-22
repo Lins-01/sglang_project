@@ -23,7 +23,7 @@ import re
 
 import datasets
 
-from .hdfs_io_1 import copy, makedirs
+from verl.utils.hdfs_io import copy, makedirs
 
 
 def extract_solution(solution_str):

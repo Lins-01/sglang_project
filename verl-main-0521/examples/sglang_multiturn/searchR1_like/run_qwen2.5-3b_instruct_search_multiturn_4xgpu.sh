@@ -6,7 +6,9 @@ set -x
 ulimit -n 65535
 
 PROJECT_DIR="$(pwd)"
-CONFIG_PATH="$PROJECT_DIR/examples/sglang_multiturn/config"
+CONFIG_PATH="$PROJECT_DIR/examples/sglang_multiturn/searchR1_like"
+train_data=$HOME/data/gsm8k/train.parquet
+val_data=$HOME/data/gsm8k/train.parquet
 
 python3 -m verl.trainer.main_ppo \
     --config-path="$CONFIG_PATH" \
@@ -41,13 +43,13 @@ python3 -m verl.trainer.main_ppo \
     trainer.critic_warmup=0 \
     trainer.logger=['console','wandb'] \
     trainer.project_name='search_async_rl' \
-    trainer.experiment_name='qwen2.5-3b-instruct_function_rm-search-async-sgl-multi-w-tool-verify-n16' \
-    trainer.n_gpus_per_node=8 \
+    trainer.experiment_name='qwen2.5-3b-instruct_function_rm-search-async-sgl-multi-w-searchtool-verify-n16' \
+    trainer.n_gpus_per_node=4 \
     trainer.nnodes=1 \
     trainer.save_freq=-1 \
     trainer.test_freq=20 \
-    data.train_files=$HOME/data/gsm8k/train.parquet \
-    data.val_files=$HOME/data/gsm8k/test.parquet \
-    actor_rollout_ref.rollout.multi_turn.tool_config_path="$PROJECT_DIR/examples/sglang_multiturn/config/tool_config/search_tool_config.yaml" \
-    trainer.total_epochs=15 $@
+    data.train_files=$HOME/data/searchR1_processed_direct/train.parquet \
+    data.val_files=$HOME/data/searchR1_processed_direct/test.parquet  \
+    actor_rollout_ref.rollout.multi_turn.tool_config_path="$PROJECT_DIR/examples/sglang_multiturn/searchR1_like/search_tool_config.yaml" \
+    trainer.total_epochs=1 $@
 
