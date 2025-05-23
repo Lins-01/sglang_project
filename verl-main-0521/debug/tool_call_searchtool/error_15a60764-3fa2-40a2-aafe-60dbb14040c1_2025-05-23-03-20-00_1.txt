@@ -1,5 +1,0 @@
---- Attempted Payload to Server ---
-{"queries": ["when does episode 4 of game of thrones air", "air date for game of thrones episode 4", "game of thrones episode 4 air date"]}
-
---- Exception (Attempt 2) ---
-500, message='Attempt to decode JSON with unexpected mimetype: text/plain; charset=utf-8', url='http://0.0.0.0:8000/retrieve'

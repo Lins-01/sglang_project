@@ -1,5 +1,0 @@
---- Attempted Payload to Server ---
-{"queries": ["when does asian guy die in fast and furious", "death of asian character in fast and furious", "character death in fast and furious involving Asian background"]}
-
---- Exception (Attempt 3) ---
-500, message='Attempt to decode JSON with unexpected mimetype: text/plain; charset=utf-8', url='http://0.0.0.0:8000/retrieve'

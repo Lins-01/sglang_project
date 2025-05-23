@@ -1,5 +1,0 @@
---- Attempted Payload to Server ---
-{"queries": ["introduction of electronic voting machine in india", "when were electronic voting machines introduced for elections in india", "first use of electronic voting machines in indian elections"]}
-
---- Exception (Attempt 3) ---
-500, message='Attempt to decode JSON with unexpected mimetype: text/plain; charset=utf-8', url='http://0.0.0.0:8000/retrieve'
