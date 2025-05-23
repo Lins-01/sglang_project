@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["when does real time with bill maher come back"]}
+
+--- Exception (Attempt 5) ---
+500, message='Attempt to decode JSON with unexpected mimetype: text/plain; charset=utf-8', url='http://0.0.0.0:8000/retrieve'

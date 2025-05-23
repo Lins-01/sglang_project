@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["number of french speaking countries in the world"]}
+
+--- Exception (Attempt 4) ---
+500, message='Attempt to decode JSON with unexpected mimetype: text/plain; charset=utf-8', url='http://0.0.0.0:8000/retrieve'

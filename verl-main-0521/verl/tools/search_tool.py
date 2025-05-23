@@ -95,13 +95,19 @@ class SearchTool(BaseTool):
             tool_reward_score: The step reward score of the tool.
             tool_metrics: The metrics of the tool.
         """
-        retrieval_service_url = "http://0.0.0.0:8000/retrieve"
+        retrieval_service_url = "http://127.0.0.1:8000/retrieve"
         query_list_from_params = parameters.get("query_list")
         if not query_list_from_params or not isinstance(query_list_from_params, list):
             error_msg = "Error: 'query_list' is missing, empty, or not a list in parameters."
             logger.error(f"[SearchTool] {error_msg} Received parameters: {parameters}")
             return json.dumps({"result": error_msg}), 0.0, {}
-        server_payload = { "queries": query_list_from_params}
+        
+        
+        payload = {
+            "queries": query_list_from_params,
+            "topk": 3,
+            "return_scores": True
+        }
         
         resp_text_str = json.dumps({"result": "Search server request failed or timed out after retries."}) # 默认失败信息
         debug_save_path = os.path.join(os.getcwd(), "debug", "tool_call_searchtool")
@@ -110,7 +116,7 @@ class SearchTool(BaseTool):
         for step in range(10): # 最多重试10次
             try:
                 async with aiohttp.ClientSession() as session:
-                    async with session.post(retrieval_service_url, json=server_payload, timeout=80) as resp:
+                    async with session.post(retrieval_service_url, json=payload, timeout=80) as resp:
                         response_data = await resp.json() # 直接获取JSON响应
                         if resp.status == 200:
                             # 服务端返回的已经是 {"result": ...} 格式的JSON
@@ -142,7 +148,7 @@ class SearchTool(BaseTool):
                 log_file = os.path.join(debug_save_path, f"error_{instance_id}_{ts}_{step}.txt")
                 with open(log_file, "w", encoding="utf-8") as f:
                     f.write("--- Attempted Payload to Server ---\n")
-                    f.write(json.dumps(server_payload, ensure_ascii=False) + "\n\n")
+                    f.write(json.dumps(payload, ensure_ascii=False) + "\n\n")
                     f.write(f"--- Exception (Attempt {step + 1}) ---\n")
                     f.write(str(e) + "\n")
                     
@@ -161,5 +167,7 @@ class SearchTool(BaseTool):
         return 0.0
 
     async def release(self, instance_id: str, **kwargs) -> None:
-        del self._instance_dict[instance_id]
+        # del self._instance_dict[instance_id]
+        pass
+
         

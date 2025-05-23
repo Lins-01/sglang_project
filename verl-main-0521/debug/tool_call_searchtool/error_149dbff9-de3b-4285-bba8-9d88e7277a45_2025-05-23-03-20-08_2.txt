@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["who is responsible for spreading agriculture and iron smelting in sub saharan africa", "history of agriculture and iron smelting in sub saharan africa", "spread of agriculture and iron smelting in sub saharan africa", "who introduced agriculture and iron smelting to sub saharan africa", "role of ancient civilizations in spreading agriculture and iron smelting in sub saharan africa"]}
+
+--- Exception (Attempt 3) ---
+500, message='Attempt to decode JSON with unexpected mimetype: text/plain; charset=utf-8', url='http://0.0.0.0:8000/retrieve'

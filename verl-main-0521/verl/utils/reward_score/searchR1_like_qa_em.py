@@ -74,13 +74,18 @@ def extract_solution(solution_str):
     match = re.finditer(answer_pattern, solution_str, re.DOTALL)
     matches = list(match)
     
-    # If there are 0 or exactly 1 matches, return None
-    if len(matches) <= 1:
+    # If there are 0  matches, return None
+    if len(matches) < 1:
         return None
     
     # If there are 2 or more matches, return the last one
     return matches[-1].group(1).strip()
 
+def count_answer_tags(text):
+    opening_tags = text.count('<answer>')
+    closing_tags = text.count('</answer>')
+
+    return opening_tags, closing_tags
 
 def compute_score(solution_str, ground_truth, method='strict', format_score=0., score=1.):
     """The scoring function for exact match (EM).
@@ -93,6 +98,7 @@ def compute_score(solution_str, ground_truth, method='strict', format_score=0., 
         score: the score for the correct answer
     """
     answer = extract_solution(solution_str=solution_str)
+    open_count , close_count = count_answer_tags(solution_str)
     do_print = random.randint(1, 64) == 1
     
     if do_print:
@@ -105,7 +111,9 @@ def compute_score(solution_str, ground_truth, method='strict', format_score=0., 
         return 0
     else:
         if em_check(answer, ground_truth['target']):
-            return score
+            if open_count > 10 or close_count > 10: # prevent output a lot of </answer>
+                score = score / 4
+                return score
         else:
             return format_score
 
