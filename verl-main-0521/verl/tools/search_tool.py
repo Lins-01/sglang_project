@@ -131,8 +131,8 @@ class SearchTool(BaseTool):
         self._instance_dict = {}
         
         # TODO: better documentation for the config
-        self.num_workers = config.get("num_workers", 10)
-        self.rate_limit = config.get("rate_limit", 10)
+        self.num_workers = config.get("num_workers", 120)
+        self.rate_limit = config.get("rate_limit", 150)
         self.default_timeout = config.get("default_timeout", 30)
         self.enable_global_rate_limit = config.get("enable_global_rate_limit", True)
         self.execution_pool = init_search_execution_pool(

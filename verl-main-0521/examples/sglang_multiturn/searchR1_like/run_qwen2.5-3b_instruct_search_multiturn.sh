@@ -9,10 +9,10 @@ PROJECT_DIR="$(pwd)"
 CONFIG_PATH="$PROJECT_DIR/examples/sglang_multiturn/searchR1_like"
 
 
-# TRAIN_DATA="/root/Changling/verl-main-0521/data/nq_train_8000.parquet"
-# VAL_DATA="/root/Changling/verl-main-0521/data/nq_val_200.parquet"
-TRAIN_DATA="$HOME/data/searchR1_processed_direct/train.parquet"
-VAL_DATA="$HOME/data/searchR1_processed_direct/test.parquet"
+TRAIN_DATA="/root/Changling/verl-main-0521/data/nq_train_8000.parquet"
+VAL_DATA="/root/Changling/verl-main-0521/data/nq_val_200.parquet"
+# TRAIN_DATA="$HOME/data/searchR1_processed_direct/train.parquet"
+# VAL_DATA="$HOME/data/searchR1_processed_direct/test.parquet"
 
 TOOL_CONFIG="$CONFIG_PATH/search_tool_config.yaml"
 
@@ -33,7 +33,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.actor.optim.lr=1e-6 \
     actor_rollout_ref.model.use_remove_padding=True \
     actor_rollout_ref.actor.ppo_mini_batch_size=256 \
-    actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=64 \
+    actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=8 \
     actor_rollout_ref.actor.use_kl_loss=True \
     actor_rollout_ref.actor.kl_loss_coef=0.001 \
     actor_rollout_ref.actor.kl_loss_type=low_var_kl \
@@ -42,12 +42,12 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.actor.fsdp_config.param_offload=True \
     actor_rollout_ref.actor.fsdp_config.optimizer_offload=True \
     actor_rollout_ref.rollout.max_model_len=15000 \
-    actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=128 \
+    actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=8 \
     actor_rollout_ref.rollout.tensor_model_parallel_size=1 \
     actor_rollout_ref.rollout.name=sglang_async \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.5 \
     actor_rollout_ref.rollout.n=8 \
-    actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=128 \
+    actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=8 \
     actor_rollout_ref.ref.fsdp_config.param_offload=True \
     algorithm.use_kl_in_reward=False \
     trainer.critic_warmup=0 \
