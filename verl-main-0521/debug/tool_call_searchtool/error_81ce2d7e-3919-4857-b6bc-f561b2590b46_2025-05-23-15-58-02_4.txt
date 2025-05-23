@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["current afc championship teams", "2023 afc championship teams", "latest afc championship teams"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

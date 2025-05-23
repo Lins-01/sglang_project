@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["who plays dewey finn school of rock broadway"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

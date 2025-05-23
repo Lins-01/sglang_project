@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["who opened the cape route to india"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

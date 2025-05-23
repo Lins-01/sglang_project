@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["when was the death penalty abolished in new zealand"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

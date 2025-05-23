@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["when does the king's speech take place", "setting of the king's speech"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+[Errno 104] Connection reset by peer

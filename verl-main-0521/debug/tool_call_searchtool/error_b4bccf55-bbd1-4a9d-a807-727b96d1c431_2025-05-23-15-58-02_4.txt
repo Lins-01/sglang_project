@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["actress who played daughter in father knows best"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

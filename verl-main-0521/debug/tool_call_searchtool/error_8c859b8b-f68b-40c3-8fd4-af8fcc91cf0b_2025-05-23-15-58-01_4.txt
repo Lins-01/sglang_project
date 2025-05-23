@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["most recent world cup", "did saudi arabia participate in the most recent world cup"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

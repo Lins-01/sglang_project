@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["first season of the office us", "when did the first season of the office us start"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

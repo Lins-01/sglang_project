@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["most recent vanderbilt alabama football game", "latest vanderbilt alabama football match", "vanderbilt alabama football recent game"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

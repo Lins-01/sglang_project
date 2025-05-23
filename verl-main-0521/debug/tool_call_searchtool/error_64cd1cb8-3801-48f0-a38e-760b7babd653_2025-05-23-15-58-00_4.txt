@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["Peter Dinklage Angry Birds movie role"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

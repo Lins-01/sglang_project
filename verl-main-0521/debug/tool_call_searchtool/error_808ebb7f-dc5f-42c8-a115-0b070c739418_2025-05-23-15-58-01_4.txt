@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["who sings with eddie money on take me home tonight"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["when is the olympics going to be in la", "olympics in los angeles 2028", "2028 los angeles olympics date"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+[Errno 104] Connection reset by peer

@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["timeline of tour de france", "when are tour de france teams announced"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

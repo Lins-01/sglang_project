@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["can you feel the love tonight movie release date"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["The Fisters season 5"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 4) ---
+Server disconnected

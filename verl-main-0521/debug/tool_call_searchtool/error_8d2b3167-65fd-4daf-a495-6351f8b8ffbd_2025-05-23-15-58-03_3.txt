@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["host of jhalak dikhla jaa season 2 manish paul"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 4) ---
+Server disconnected

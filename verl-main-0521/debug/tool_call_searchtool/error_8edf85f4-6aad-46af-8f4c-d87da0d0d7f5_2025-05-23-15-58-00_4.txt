@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["a potentially dangerous condition of abnormally high blood pressure in a pregnant woman"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

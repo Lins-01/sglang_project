@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["sap s/4 hana cloud release cycle", "sap s/4 hana cloud update frequency", "sap s/4 hana cloud release schedule"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

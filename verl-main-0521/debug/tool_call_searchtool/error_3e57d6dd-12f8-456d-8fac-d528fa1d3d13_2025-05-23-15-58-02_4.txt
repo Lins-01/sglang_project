@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["first world series win st louis cardinals"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

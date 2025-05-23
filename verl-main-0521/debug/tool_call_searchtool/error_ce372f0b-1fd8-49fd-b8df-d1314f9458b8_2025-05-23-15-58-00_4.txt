@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["female vocalist paradise by the dashboard lights", "singer of female part paradise by the dashboard lights", "who sang female part of paradise by the dashboard lights", "paradise song female vocalist"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

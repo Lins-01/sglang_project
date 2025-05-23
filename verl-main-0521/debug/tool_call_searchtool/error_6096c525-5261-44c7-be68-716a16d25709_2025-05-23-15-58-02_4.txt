@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["how i met your mother victoria return date"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

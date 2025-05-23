@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["where does reduction take place in an electrochemical cell"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

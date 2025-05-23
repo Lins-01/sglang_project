@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["lebron james olympic medals", "lebron james olympic gold medals"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

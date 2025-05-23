@@ -13,23 +13,87 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
 import json
 import logging
 import os
-import time
-from typing import Any, Optional, Tuple
+import threading
+from contextlib import ExitStack
+from enum import Enum
+from typing import Any, Callable, Optional, Tuple, TypeVar
 from uuid import uuid4
 
-import aiohttp
-import requests
-from verl.utils.reward_score import gsm8k
+import ray
+import ray.actor
 
 from .base_tool import BaseTool
 from .schemas import OpenAIFunctionToolSchema
+from verl.utils.reward_score.searchR1_like_utils import perform_single_search_batch
 
 logger = logging.getLogger(__name__)
 logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))
+
+T = TypeVar("T")
+
+
+class PoolMode(Enum):
+    ThreadMode = 1
+    ProcessMode = 2
+
+
+@ray.remote(concurrency_groups={"acquire": 1, "release": 10})
+class TokenBucketWorker:
+    def __init__(self, rate_limit: int):
+        self.rate_limit = rate_limit
+        # this only used for observalability
+        self.current_count = 0
+        self._semaphore = threading.Semaphore(rate_limit)
+
+    @ray.method(concurrency_group="acquire")
+    def acquire(self):
+        self._semaphore.acquire()
+        self.current_count += 1
+
+    @ray.method(concurrency_group="release")
+    def release(self):
+        self._semaphore.release()
+        self.current_count -= 1
+
+    def get_current_count(self):
+        return self.current_count
+
+
+class SearchExecutionWorker:
+    def __init__(self, enable_global_rate_limit=True, rate_limit=10):
+        self.rate_limit_worker = self._init_rate_limit(rate_limit) if enable_global_rate_limit else None
+
+    def _init_rate_limit(self, rate_limit):
+        # TODO validation for rate_limit
+        # A Singleton Rate Limitor
+        return TokenBucketWorker.options(name="search-rate-limiter", get_if_exists=True).remote(rate_limit)
+
+    def ping(self):
+        return True
+
+    def execute(self, fn: Callable[..., T], *fn_args, **fn_kwargs) -> T:
+        if self.rate_limit_worker:
+            with ExitStack() as stack:
+                stack.callback(self.rate_limit_worker.release.remote)
+                ray.get(self.rate_limit_worker.acquire.remote())
+                try:
+                    return fn(*fn_args, **fn_kwargs)
+                except Exception as e:
+                    # TODO we should make this available to the tool caller
+                    logger.warning(f"Error when executing search: {e}")
+                    raise
+        else:
+            return fn(*fn_args, **fn_kwargs)
+
+
+def init_search_execution_pool(num_workers: int, enable_global_rate_limit=True, rate_limit=10, mode: PoolMode = PoolMode.ThreadMode):
+    if mode == PoolMode.ThreadMode:
+        return ray.remote(SearchExecutionWorker).options(max_concurrency=num_workers).remote(enable_global_rate_limit=enable_global_rate_limit, rate_limit=rate_limit)
+    else:
+        raise NotImplementedError("Process mode is not implemented yet")
 
 
 class SearchTool(BaseTool):
@@ -65,6 +129,27 @@ class SearchTool(BaseTool):
         """
         super().__init__(config, tool_schema)
         self._instance_dict = {}
+        
+        # TODO: better documentation for the config
+        self.num_workers = config.get("num_workers", 10)
+        self.rate_limit = config.get("rate_limit", 10)
+        self.default_timeout = config.get("default_timeout", 30)
+        self.enable_global_rate_limit = config.get("enable_global_rate_limit", True)
+        self.execution_pool = init_search_execution_pool(
+            num_workers=self.num_workers, 
+            enable_global_rate_limit=self.enable_global_rate_limit, 
+            rate_limit=self.rate_limit, 
+            mode=PoolMode.ThreadMode
+        )
+        
+        # 搜索服务配置
+        self.retrieval_service_url = config.get("retrieval_service_url", "http://127.0.0.1:8000/retrieve")
+        self.topk = config.get("topk", 3)
+        if self.retrieval_service_url == "":
+            raise ValueError("retrieval_service_url is not set")
+        
+        log_msg = f"Init SearchTool with config: {config}"
+        logger.info(log_msg)
 
     def get_openai_tool_schema(self) -> OpenAIFunctionToolSchema:
         return self.tool_schema
@@ -79,10 +164,25 @@ class SearchTool(BaseTool):
             The instance id of the tool.
         """
         if instance_id is None:
-            return str(uuid4())
-        else:
-            return instance_id
+            instance_id = str(uuid4())
+        self._instance_dict[instance_id] = {
+            "response": "",
+            "reward": [],
+        }
+        return instance_id
 
+    def execute_search(self, instance_id: str, query_list: list, retrieval_service_url: str, topk: int, timeout: int):
+        """Execute search using search_utils."""
+        result_text, metadata = perform_single_search_batch(
+            retrieval_service_url=retrieval_service_url,
+            query_list=query_list,
+            topk=topk,
+            concurrent_semaphore=None,  # Ray已经处理了并发控制
+            timeout=timeout
+        )
+        logger.debug(f"Search result for instance {instance_id}: {result_text}")
+        return result_text, metadata
+    
     async def execute(self, instance_id: str, parameters: dict[str, Any], **kwargs) -> Tuple[str, float, dict]:
         """Execute the tool.
 
@@ -95,79 +195,47 @@ class SearchTool(BaseTool):
             tool_reward_score: The step reward score of the tool.
             tool_metrics: The metrics of the tool.
         """
-        retrieval_service_url = "http://127.0.0.1:8000/retrieve"
+        timeout = parameters.get("timeout", self.default_timeout)
         query_list_from_params = parameters.get("query_list")
         if not query_list_from_params or not isinstance(query_list_from_params, list):
             error_msg = "Error: 'query_list' is missing, empty, or not a list in parameters."
             logger.error(f"[SearchTool] {error_msg} Received parameters: {parameters}")
             return json.dumps({"result": error_msg}), 0.0, {}
         
-        
-        payload = {
-            "queries": query_list_from_params,
-            "topk": 1,
-            "return_scores": True
-        }
-        
-        resp_text_str = json.dumps({"result": "Search server request failed or timed out after retries."}) # 默认失败信息
-        debug_save_path = os.path.join(os.getcwd(), "debug", "tool_call_searchtool")
-        os.makedirs(debug_save_path, exist_ok=True)
-
-        for step in range(10): # 最多重试10次
-            try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.post(retrieval_service_url, json=payload, timeout=80) as resp:
-                        response_data = await resp.json() # 直接获取JSON响应
-                        if resp.status == 200:
-                            # 服务端返回的已经是 {"result": ...} 格式的JSON
-                            # Tool 的 execute 通常返回字符串，所以我们将服务端JSON转为字符串
-                            resp_text_str = json.dumps(response_data)
-                            logger.debug(f"[SearchTool] Success. Response: {resp_text_str}")
-                        else:
-                            error_detail = response_data.get("detail", await resp.text())
-                            logger.error(f"[SearchTool] Error from retrieval server. Status: {resp.status}, Detail: {error_detail}")
-                            resp_text_str = json.dumps({"result": f"Error from retrieval server: Status {resp.status} - {error_detail}"})
-                        break  # 成功或有明确错误响应后跳出重试
-            except aiohttp.ClientConnectorError as e: # 网络连接错误
-                logger.error(f"[SearchTool] Connection error on step {step}: {e}. Retrying in 10s...")
-                if step == 9: # 最后一次尝试仍然失败
-                    resp_text_str = json.dumps({"result": f"Search server connection error after multiple retries: {e}"})
-            except asyncio.TimeoutError: # aiohttp 的超时 (如果 ClientSession 或请求级别设置了总超时)
-                 logger.error(f"[SearchTool] Timeout error on step {step}. Retrying in 10s...")
-                 if step == 9:
-                    resp_text_str = json.dumps({"result": "Search server request timed out after multiple retries."})
-            except Exception as e: # 其他所有异常
-                # 保存调试信息
-                current_files = os.listdir(debug_save_path)
-                if len(current_files) > 1000: # 限制日志文件数量
-                    oldest_file = min([os.path.join(debug_save_path, f) for f in current_files], key=os.path.getctime, default=None)
-                    if oldest_file: os.remove(oldest_file)
-                
-                ts = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-                # 使用 instance_id 或其他唯一标识避免文件名冲突（如果并行处理）
-                log_file = os.path.join(debug_save_path, f"error_{instance_id}_{ts}_{step}.txt")
-                with open(log_file, "w", encoding="utf-8") as f:
-                    f.write("--- Attempted Payload to Server ---\n")
-                    f.write(json.dumps(payload, ensure_ascii=False) + "\n\n")
-                    f.write(f"--- Exception (Attempt {step + 1}) ---\n")
-                    f.write(str(e) + "\n")
-                    
-
-
-                logger.error(f"[SearchTool] Exception on step {step}: {e}. Retrying in 10s...")
-                if step == 9: # 最后一次尝试仍然失败
-                    resp_text_str = json.dumps({"result": f"Search server request failed after multiple retries due to: {e}"})
+        # 使用Ray执行池执行搜索
+        try:
+            result_text, metadata = await self.execution_pool.execute.remote(
+                self.execute_search, 
+                instance_id, 
+                query_list_from_params, 
+                self.retrieval_service_url, 
+                self.topk,
+                timeout
+            )
             
-            if step < 9: # 如果不是最后一次尝试，则等待后重试
-                await asyncio.sleep(10)
+            # 记录结果到实例字典
+            self._instance_dict[instance_id]["reward"].append(result_text.strip())
+            
+            # 将metadata转换为metrics
+            metrics = {
+                "query_count": metadata.get("query_count", 0),
+                "status": metadata.get("status", "unknown"),
+                "total_results": metadata.get("total_results", 0),
+                "api_request_error": metadata.get("api_request_error")
+            }
+            
+            return result_text, 0.0, metrics
+            
+        except Exception as e:
+            error_result = json.dumps({"result": f"Search execution failed: {e}"})
+            logger.error(f"[SearchTool] Execution failed: {e}")
+            return error_result, 0.0, {"error": str(e)}
 
-        return resp_text_str, 0.0, {} # tool_reward_score 和 tool_metrics 暂时为默认值
-
-    async def calc_reward(self, instance_id: str, **kwargs) -> float:
-        return 0.0
+    async def calc_reward(self, instance_id: str, **kwargs) -> str:
+        return self._instance_dict[instance_id]["reward"]
 
     async def release(self, instance_id: str, **kwargs) -> None:
-        # del self._instance_dict[instance_id]
-        pass
+        if instance_id in self._instance_dict:
+            del self._instance_dict[instance_id]
 
         

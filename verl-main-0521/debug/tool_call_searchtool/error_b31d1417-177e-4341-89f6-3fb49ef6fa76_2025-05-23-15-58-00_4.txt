@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["an agreement to exchange two currencies is called a(n) currency swap"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["top 3 point percentage leaders in nba history"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

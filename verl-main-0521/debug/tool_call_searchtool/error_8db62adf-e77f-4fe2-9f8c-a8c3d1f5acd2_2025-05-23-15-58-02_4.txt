@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["provinces in Canada that have tried to gain independence", "cultural differences among Canadian provinces", "independence movements in Canadian provinces"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

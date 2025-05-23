@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["weekly schedule love & hip hop atlanta"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 4) ---
+Server disconnected

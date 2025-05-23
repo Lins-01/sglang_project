@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["zombies in Game of Thrones", "zombies in Game of Thrones season", "zombies in Game of Thrones episode"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected

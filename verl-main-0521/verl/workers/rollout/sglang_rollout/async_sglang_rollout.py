@@ -484,11 +484,12 @@ class AsyncSGLangRollout(BaseRollout):
                     raise ValueError(f"Unexpected tool calling last message state: {_req.messages[-1]}")
             elif _req.state == AsyncRolloutRequestStateEnum.RUNNING:
                 generation_prompt = _req.get_generation_prompt(self.tokenizer)
-                if self._tp_rank == 0:
-                    import json
-                    input={"generation_prompt":generation_prompt}
-                    with open("generation_prompt.jsonl","a",encoding="utf-8") as f:
-                        f.write(json.dumps(input,ensure_ascii=False)+"\n")
+                ### debug
+                # if self._tp_rank == 0:
+                #     import json
+                #     input={"generation_prompt":generation_prompt}
+                #     with open("generation_prompt.jsonl","a",encoding="utf-8") as f:
+                #         f.write(json.dumps(input,ensure_ascii=False)+"\n")
                 if not do_sample:
                     kwargs = dict(
                         n=1,

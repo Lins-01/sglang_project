@@ -1,0 +1,5 @@
+--- Attempted Payload to Server ---
+{"queries": ["schedule of young sheldon", "next episode of young sheldon"], "topk": 3, "return_scores": true}
+
+--- Exception (Attempt 5) ---
+Server disconnected
