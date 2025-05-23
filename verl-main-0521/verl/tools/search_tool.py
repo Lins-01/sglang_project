@@ -105,7 +105,7 @@ class SearchTool(BaseTool):
         
         payload = {
             "queries": query_list_from_params,
-            "topk": 3,
+            "topk": 1,
             "return_scores": True
         }
         
