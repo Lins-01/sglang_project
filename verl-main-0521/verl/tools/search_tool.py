@@ -95,44 +95,67 @@ class SearchTool(BaseTool):
             tool_reward_score: The step reward score of the tool.
             tool_metrics: The metrics of the tool.
         """
-        url = "http://127.0.0.1:8862/tool_call"
-        payload = {"name": "search", "arguments": parameters}
-        func_args_str = f'<tool_call>\n{json.dumps(payload, ensure_ascii=False)}\n</tool_call>'
-        input_data = {
-            "func_args_str": func_args_str,
-            "level": 0
-        }
+        retrieval_service_url = "http://0.0.0.0:8000/retrieve"
+        query_list_from_params = parameters.get("query_list")
+        if not query_list_from_params or not isinstance(query_list_from_params, list):
+            error_msg = "Error: 'query_list' is missing, empty, or not a list in parameters."
+            logger.error(f"[SearchTool] {error_msg} Received parameters: {parameters}")
+            return json.dumps({"result": error_msg}), 0.0, {}
+        server_payload = { "queries": query_list_from_params}
+        
+        resp_text_str = json.dumps({"result": "Search server request failed or timed out after retries."}) # 默认失败信息
+        debug_save_path = os.path.join(os.getcwd(), "debug", "tool_call_searchtool")
+        os.makedirs(debug_save_path, exist_ok=True)
 
-        debug_save_path = os.path.join(os.getcwd(), "debug", "tool_call")
-
-        for step in range(10):
+        for step in range(10): # 最多重试10次
             try:
                 async with aiohttp.ClientSession() as session:
-                    async with session.post(url, json=input_data, timeout=80) as resp:
-                        response_json = await resp.json()
-                resp_text = str(response_json.get("response", "search server timeout"))
-                break
-            except Exception as e:
-                os.makedirs(debug_save_path, exist_ok=True)
-
-                files = os.listdir(debug_save_path)
-                if len(files) > 1000:
-                    for fn in files:
-                        os.remove(os.path.join(debug_save_path, fn))
-
+                    async with session.post(retrieval_service_url, json=server_payload, timeout=80) as resp:
+                        response_data = await resp.json() # 直接获取JSON响应
+                        if resp.status == 200:
+                            # 服务端返回的已经是 {"result": ...} 格式的JSON
+                            # Tool 的 execute 通常返回字符串，所以我们将服务端JSON转为字符串
+                            resp_text_str = json.dumps(response_data)
+                            logger.debug(f"[SearchTool] Success. Response: {resp_text_str}")
+                        else:
+                            error_detail = response_data.get("detail", await resp.text())
+                            logger.error(f"[SearchTool] Error from retrieval server. Status: {resp.status}, Detail: {error_detail}")
+                            resp_text_str = json.dumps({"result": f"Error from retrieval server: Status {resp.status} - {error_detail}"})
+                        break  # 成功或有明确错误响应后跳出重试
+            except aiohttp.ClientConnectorError as e: # 网络连接错误
+                logger.error(f"[SearchTool] Connection error on step {step}: {e}. Retrying in 10s...")
+                if step == 9: # 最后一次尝试仍然失败
+                    resp_text_str = json.dumps({"result": f"Search server connection error after multiple retries: {e}"})
+            except asyncio.TimeoutError: # aiohttp 的超时 (如果 ClientSession 或请求级别设置了总超时)
+                 logger.error(f"[SearchTool] Timeout error on step {step}. Retrying in 10s...")
+                 if step == 9:
+                    resp_text_str = json.dumps({"result": "Search server request timed out after multiple retries."})
+            except Exception as e: # 其他所有异常
+                # 保存调试信息
+                current_files = os.listdir(debug_save_path)
+                if len(current_files) > 1000: # 限制日志文件数量
+                    oldest_file = min([os.path.join(debug_save_path, f) for f in current_files], key=os.path.getctime, default=None)
+                    if oldest_file: os.remove(oldest_file)
+                
                 ts = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-                log_file = os.path.join(debug_save_path, f"{len(files)}_{ts}.txt")
+                # 使用 instance_id 或其他唯一标识避免文件名冲突（如果并行处理）
+                log_file = os.path.join(debug_save_path, f"error_{instance_id}_{ts}_{step}.txt")
                 with open(log_file, "w", encoding="utf-8") as f:
-                    f.write("--- func_args_str ---\n")
-                    f.write(func_args_str + "\n")
-                    f.write("--- exception ---\n")
-                    f.write(str(e))
+                    f.write("--- Attempted Payload to Server ---\n")
+                    f.write(json.dumps(server_payload, ensure_ascii=False) + "\n\n")
+                    f.write(f"--- Exception (Attempt {step + 1}) ---\n")
+                    f.write(str(e) + "\n")
+                    
 
-                print(f"[AgentTool] search tool step {step} failed: {e}. Retrying in 10s...")
+
+                logger.error(f"[SearchTool] Exception on step {step}: {e}. Retrying in 10s...")
+                if step == 9: # 最后一次尝试仍然失败
+                    resp_text_str = json.dumps({"result": f"Search server request failed after multiple retries due to: {e}"})
+            
+            if step < 9: # 如果不是最后一次尝试，则等待后重试
                 await asyncio.sleep(10)
-                resp_text = '{"result": "search server request failed"}'
 
-        return resp_text, 0.0, {}
+        return resp_text_str, 0.0, {} # tool_reward_score 和 tool_metrics 暂时为默认值
 
     async def calc_reward(self, instance_id: str, **kwargs) -> float:
         return 0.0
