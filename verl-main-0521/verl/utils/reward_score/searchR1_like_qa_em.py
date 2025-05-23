@@ -114,6 +114,7 @@ def compute_score(solution_str, ground_truth, method='strict', format_score=0., 
             if open_count > 10 or close_count > 10: # prevent output a lot of </answer>
                 score = score / 4
                 return score
+            return score
         else:
             return format_score
 
