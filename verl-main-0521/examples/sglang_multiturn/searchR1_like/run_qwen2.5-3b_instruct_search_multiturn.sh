@@ -9,14 +9,14 @@ PROJECT_DIR="$(pwd)"
 CONFIG_PATH="$PROJECT_DIR/examples/sglang_multiturn/searchR1_like"
 
 
-TRAIN_DATA="/root/Changling/verl-main-0521/data/nq_train_8000.parquet"
-VAL_DATA="/root/Changling/verl-main-0521/data/nq_val_200.parquet"
-# TRAIN_DATA="$HOME/data/searchR1_processed_direct/train.parquet"
-# VAL_DATA="$HOME/data/searchR1_processed_direct/test.parquet"
+# TRAIN_DATA="/root/Changling/verl-main-0521/data/nq_train_8000.parquet"
+# VAL_DATA="/root/Changling/verl-main-0521/data/nq_val_200.parquet"
+TRAIN_DATA="$HOME/data/searchR1_processed_direct/train.parquet"
+VAL_DATA="$HOME/data/searchR1_processed_direct/test.parquet"
 
 TOOL_CONFIG="$CONFIG_PATH/search_tool_config.yaml"
 
-# actor_rollout_ref.actor.optim.lr_warmup_steps_ratio=0.285 \
+
 
 python3 -m verl.trainer.main_ppo \
     --config-path="$CONFIG_PATH" \
@@ -31,6 +31,7 @@ python3 -m verl.trainer.main_ppo \
     data.return_raw_chat=True \
     actor_rollout_ref.model.path=Qwen/Qwen2.5-3B-Instruct \
     actor_rollout_ref.actor.optim.lr=1e-6 \
+    actor_rollout_ref.actor.optim.lr_warmup_steps_ratio=0.285 \
     actor_rollout_ref.model.use_remove_padding=True \
     actor_rollout_ref.actor.ppo_mini_batch_size=256 \
     actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=8 \
@@ -39,14 +40,14 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.actor.kl_loss_type=low_var_kl \
     actor_rollout_ref.actor.entropy_coeff=0 \
     actor_rollout_ref.model.enable_gradient_checkpointing=True \
-    actor_rollout_ref.actor.fsdp_config.param_offload=True \
-    actor_rollout_ref.actor.fsdp_config.optimizer_offload=True \
+    actor_rollout_ref.actor.fsdp_config.param_offload=False \
+    actor_rollout_ref.actor.fsdp_config.optimizer_offload=False \
     actor_rollout_ref.rollout.max_model_len=15000 \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=8 \
     actor_rollout_ref.rollout.tensor_model_parallel_size=1 \
     actor_rollout_ref.rollout.name=sglang_async \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.5 \
-    actor_rollout_ref.rollout.n=8 \
+    actor_rollout_ref.rollout.n=5 \
     actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=8 \
     actor_rollout_ref.ref.fsdp_config.param_offload=True \
     algorithm.use_kl_in_reward=False \
@@ -56,8 +57,8 @@ python3 -m verl.trainer.main_ppo \
     trainer.experiment_name='qwen2.5-3b-instruct_function_rm-search-async-sgl-multi-w-searchtool-verify-n16' \
     trainer.n_gpus_per_node=8 \
     trainer.nnodes=1 \
-    trainer.save_freq=-1 \
-    trainer.test_freq=20 \
+    trainer.save_freq=100 \
+    trainer.test_freq=50 \
     data.train_files="$TRAIN_DATA" \
     data.val_files="$VAL_DATA"  \
     actor_rollout_ref.rollout.multi_turn.tool_config_path="$TOOL_CONFIG" \
